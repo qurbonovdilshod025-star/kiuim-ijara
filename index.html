@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="uz">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Kiyim prokat</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+:root{--bg:var(--tg-theme-bg-color,#fff);--tx:var(--tg-theme-text-color,#1b1a22);--hint:var(--tg-theme-hint-color,#76757f);--sec:var(--tg-theme-secondary-bg-color,#f3f1f4);--ac:var(--tg-theme-button-color,#9b1f3f);--act:var(--tg-theme-button-text-color,#fff)}
+@media(prefers-color-scheme:dark){:root{--bg:var(--tg-theme-bg-color,#17161d);--tx:var(--tg-theme-text-color,#f1f0f4);--hint:var(--tg-theme-hint-color,#9d9ca8);--sec:var(--tg-theme-secondary-bg-color,#22212a)}}
+*{box-sizing:border-box;margin:0}
+html,body{background:var(--bg);color:var(--tx);font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+body{padding:16px 16px 96px}
+button{font:inherit;color:inherit;border:0;background:none;cursor:pointer}
+button:focus-visible,input:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+h1{font-size:24px;margin-bottom:2px}
+.hint{color:var(--hint);font-size:14px}
+.row{display:flex;gap:8px;flex-wrap:wrap}
+#chips{margin:14px 0;overflow-x:auto;flex-wrap:nowrap;padding-bottom:2px}
+.chip{padding:8px 14px;border-radius:999px;background:var(--sec);white-space:nowrap}
+.chip.on{background:var(--ac);color:var(--act)}
+#grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{text-align:left;display:flex;flex-direction:column;gap:2px}
+.card b{font-weight:600;margin-top:8px}
+.card span{color:var(--hint);font-size:14px}
+.sw{height:168px;border-radius:14px}
+.sw.big{height:140px;margin-bottom:12px}
+#bar{position:fixed;left:16px;right:16px;bottom:calc(16px + env(safe-area-inset-bottom,0px));padding:14px;border-radius:14px;background:var(--ac);color:var(--act);font-weight:600;display:none;justify-content:space-between}
+#bar.show{display:flex}
+#ov{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:flex-end}
+#ov.open{display:flex}
+#sheet{width:100%;max-height:90%;overflow-y:auto;background:var(--bg);border-radius:20px 20px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom,0px))}
+#sheet h2{font-size:20px;margin-bottom:4px}
+#sheet h3{font-size:14px;color:var(--hint);font-weight:500;margin:16px 0 8px}
+.step{display:inline-flex;align-items:center;gap:6px;background:var(--sec);border-radius:12px}
+.step button{width:44px;height:44px;font-size:22px}
+.step b{min-width:64px;text-align:center}
+.sum{margin-top:16px;border-top:1px solid var(--sec);padding-top:12px;display:grid;gap:6px}
+.sum div{display:flex;justify-content:space-between}
+.sum span{color:var(--hint)}
+.act{width:100%;margin-top:16px;padding:14px;border-radius:14px;background:var(--ac);color:var(--act);font-weight:600}
+.close{float:right;color:var(--hint);padding:4px 0 8px 12px}
+.item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--sec)}
+.item small{display:block;color:var(--hint)}
+.rm{color:var(--hint);font-size:14px;padding:6px 0}
+input{width:100%;padding:12px;border-radius:12px;border:1px solid var(--sec);background:var(--sec);color:var(--tx);font:inherit}
+.empty{padding:28px 0;text-align:center;color:var(--hint)}
+#toast{position:fixed;left:50%;top:16px;transform:translateX(-50%);background:var(--tx);color:var(--bg);padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;pointer-events:none;transition:opacity .2s}
+#toast.show{opacity:1}
+@media(prefers-reduced-motion:reduce){#toast{transition:none}}
+</style>
+</head>
+<body>
+<h1>Kiyim prokat</h1>
+<p class="hint">Kerakli kunga ijaraga oling, soz holda qaytaring.</p>
+<div id="chips" class="row"></div>
+<div id="grid"></div>
+<button id="bar"></button>
+<div id="ov"><div id="sheet"></div></div>
+<div id="toast"></div>
+
+<script>
+const tg = window.Telegram && window.Telegram.WebApp;
+if (tg) { tg.ready(); tg.expand(); }
+
+const P = [
+  {id:1,cat:"Koʻylak",name:"Kechki koʻylak",price:250000,deposit:500000,sizes:["S","M","L"],desc:"Uzun, ipak aralash mato. Toʻy va bayram kechalari uchun.",bg:"repeating-linear-gradient(95deg,#9b1f3f 0 16px,#e8b4bf 16px 20px,#5e1226 20px 34px,#e3a21a 34px 37px)"},
+  {id:2,cat:"Koʻylak",name:"Kokteyl koʻylak",price:180000,deposit:300000,sizes:["XS","S","M"],desc:"Tizzadan yuqori, yengil mato. Tugʻilgan kun va uchrashuvlar uchun.",bg:"repeating-linear-gradient(95deg,#2b3a8c 0 18px,#c9d0f2 18px 21px,#161f57 21px 36px)"},
+  {id:3,cat:"Kostyum",name:"Klassik kostyum",price:300000,deposit:600000,sizes:["M","L","XL"],desc:"Uch qismli: pidjak, shim, jilet. Yung aralash mato.",bg:"repeating-linear-gradient(90deg,#2a2a33 0 10px,#363641 10px 12px)"},
+  {id:4,cat:"Kostyum",name:"Smoking",price:350000,deposit:700000,sizes:["M","L","XL"],desc:"Atlas yoqali, qora. Rasmiy tadbirlar va toʻylar uchun.",bg:"linear-gradient(120deg,#15141a,#34333f 50%,#15141a)"},
+  {id:5,cat:"Milliy",name:"Atlas koʻylak",price:200000,deposit:400000,sizes:["S","M","L"],desc:"Qoʻlda toʻqilgan atlas. Milliy bayram va toʻylar uchun.",bg:"repeating-linear-gradient(100deg,#0f6b5c 0 14px,#f2c14e 14px 18px,#0a3f37 18px 32px,#d9534f 32px 35px)"},
+  {id:6,cat:"Milliy",name:"Chopon va doʻppi",price:150000,deposit:300000,sizes:["M","L","XL"],desc:"Erkaklar uchun toʻplam: chopon, belbog, doʻppi.",bg:"repeating-linear-gradient(100deg,#1d3d7a 0 12px,#fff 12px 14px,#e3a21a 14px 26px,#1d3d7a 26px 28px)"}
+];
+const cats = ["Hammasi", "Koʻylak", "Kostyum", "Milliy"];
+let cat = "Hammasi", cart = [], cur = null, sel = {}, phone = "", date = "";
+const $ = s => document.querySelector(s);
+const fmt = n => String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ") + " soʻm";
+const rent = () => cart.reduce((s, i) => s + i.p.price * i.days, 0);
+const dep = () => cart.reduce((s, i) => s + i.p.deposit, 0);
+
+// Telegram MainButton (HTML tugma — Telegram tashqarida sinash uchun)
+let mainFn = null;
+function act(text, fn) {
+  const b = $("#act"); if (b) { b.textContent = text; b.onclick = fn; }
+  if (!tg) return;
+  if (mainFn) tg.MainButton.offClick(mainFn);
+  mainFn = fn; tg.MainButton.setText(text); tg.MainButton.onClick(fn); tg.MainButton.show();
+  if (b) b.style.display = "none";
+}
+function hideMain() { if (tg) { if (mainFn) tg.MainButton.offClick(mainFn); mainFn = null; tg.MainButton.hide(); } }
+
+function toast(t) { const e = $("#toast"); e.textContent = t; e.classList.add("show"); setTimeout(() => e.classList.remove("show"), 1800); }
+
+function renderList() {
+  $("#chips").innerHTML = cats.map(c => `<button class="chip${c === cat ? " on" : ""}" data-c="${c}">${c}</button>`).join("");
+  $("#grid").innerHTML = P.filter(p => cat === "Hammasi" || p.cat === cat).map(p =>
+    `<button class="card" data-id="${p.id}"><div class="sw" style="background:${p.bg}"></div><b>${p.name}</b><span>${fmt(p.price)} / kun</span></button>`).join("");
+}
+function renderBar() {
+  const b = $("#bar");
+  b.classList.toggle("show", cart.length > 0 && !$("#ov").classList.contains("open"));
+  b.innerHTML = `<span>Savat · ${cart.length} ta</span><span>${fmt(rent())}</span>`;
+}
+function openSheet(html) { $("#sheet").innerHTML = html; $("#ov").classList.add("open"); renderBar(); }
+function closeSheet() { $("#ov").classList.remove("open"); hideMain(); renderBar(); }
+
+function drawProduct() {
+  const p = cur;
+  openSheet(`<button class="close" data-x>Yopish</button><div class="sw big" style="background:${p.bg}"></div>
+  <h2>${p.name}</h2><p class="hint">${p.desc}</p>
+  <h3>Oʻlcham</h3><div class="row">${p.sizes.map(s => `<button class="chip${s === sel.size ? " on" : ""}" data-s="${s}">${s}</button>`).join("")}</div>
+  <h3>Ijara muddati</h3><div class="step"><button data-d="-1" aria-label="Kamaytirish">−</button><b>${sel.days} kun</b><button data-d="1" aria-label="Koʻpaytirish">+</button></div>
+  <div class="sum"><div><span>Ijara</span><b>${fmt(p.price * sel.days)}</b></div><div><span>Garov (qaytariladi)</span><b>${fmt(p.deposit)}</b></div></div>
+  <button class="act" id="act"></button>`);
+  act("Savatga qoʻshish", () => { cart.push({p, size: sel.size, days: sel.days}); closeSheet(); toast("Savatga qoʻshildi"); });
+}
+
+function drawCart() {
+  if (!date) { const d = new Date(Date.now() + 864e5); date = d.toISOString().slice(0, 10); }
+  const min = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  openSheet(`<button class="close" data-x>Yopish</button><h2>Savat</h2>
+  ${cart.length ? cart.map((i, k) => `<div class="item"><div><b>${i.p.name}</b><small>${i.size} · ${i.days} kun</small></div><div style="text-align:right"><b>${fmt(i.p.price * i.days)}</b><br><button class="rm" data-rm="${k}">Olib tashlash</button></div></div>`).join("") : `<div class="empty">Savat boʻsh. Katalogdan kiyim tanlang.</div>`}
+  ${cart.length ? `<h3>Olish sanasi</h3><input type="date" id="dt" min="${min}" value="${date}">
+  <h3>Telefon raqami</h3><input type="tel" id="ph" placeholder="+998 90 123 45 67" value="${phone}">
+  <div class="sum"><div><span>Ijara</span><b>${fmt(rent())}</b></div><div><span>Garov (qaytariladi)</span><b>${fmt(dep())}</b></div></div>
+  <button class="act" id="act"></button>` : ""}`);
+  if (cart.length) act("Buyurtma berish", submit); else hideMain();
+}
+
+function submit() {
+  if (phone.replace(/\D/g, "").length < 9) { toast("Telefon raqamini kiriting"); return; }
+  const order = {date, phone, rent: rent(), deposit: dep(), items: cart.map(i => ({id: i.p.id, name: i.p.name, size: i.size, days: i.days}))};
+  if (tg) { tg.sendData(JSON.stringify(order)); return; }
+  console.log(order); cart = []; closeSheet(); toast("Buyurtma qabul qilindi (sinov rejimi)");
+}
+
+document.addEventListener("click", e => {
+  const t = e.target.closest("button,#ov"); if (!t) return;
+  if (t.id === "ov") return closeSheet();
+  if (t.dataset.c) { cat = t.dataset.c; return renderList(); }
+  if (t.dataset.id) { cur = P.find(p => p.id == t.dataset.id); sel = {size: cur.sizes[0], days: 3}; return drawProduct(); }
+  if (t.dataset.s) { sel.size = t.dataset.s; return drawProduct(); }
+  if (t.dataset.d) { sel.days = Math.min(30, Math.max(1, sel.days + +t.dataset.d)); return drawProduct(); }
+  if (t.dataset.rm) { cart.splice(+t.dataset.rm, 1); return drawCart(); }
+  if (t.dataset.x !== undefined) return closeSheet();
+  if (t.id === "bar") return drawCart();
+});
+document.addEventListener("input", e => {
+  if (e.target.id === "ph") phone = e.target.value;
+  if (e.target.id === "dt") date = e.target.value;
+});
+$("#ov").addEventListener("click", e => { if (e.target.id === "ov") closeSheet(); });
+renderList(); renderBar();
+</script>
+</body>
+</html>
